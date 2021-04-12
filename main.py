@@ -7,6 +7,14 @@ pygame.font.init()
 WIDTH, HEIGHT = 750, 750
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Space Invaders 2")
+score = 0
+
+DIFFICULTY = {
+    "easy": 4,
+    "medium": 2,
+    "hard": 1,
+    "nightmare": 0.5
+}
 
 # Enemy Ship
 RED_SPACE_SHIP = pygame.image.load(os.path.join("assets", "pixel_ship_red_small.png"))
@@ -21,6 +29,9 @@ RED_LASER = pygame.image.load(os.path.join("assets", "pixel_laser_red.png"))
 GREEN_LASER = pygame.image.load(os.path.join("assets", "pixel_laser_green.png"))
 BLUE_LASER = pygame.image.load(os.path.join("assets", "pixel_laser_blue.png"))
 YELLOW_LASER = pygame.image.load(os.path.join("assets", "pixel_laser_yellow.png"))
+
+# Icon
+pygame.display.set_icon(RED_SPACE_SHIP)
 
 # Background
 BG = pygame.transform.scale(pygame.image.load(os.path.join("assets", "background-black.png")), (WIDTH, HEIGHT))
@@ -91,7 +102,7 @@ class Ship:
         return self.ship_img.get_height()
 
 class Player(Ship):
-    def __init__(self, x, y, health=100):
+    def __init__(self, x, y, health=1000):
         super().__init__(x, y, health)
         self.ship_img = YELLOW_SPACE_SHIP
         self.laser_img = YELLOW_LASER
@@ -99,6 +110,7 @@ class Player(Ship):
         self.max_health = health
     
     def move_lasers(self, vel, objs):
+        global score
         self.cooldown()
         for laser in self.lasers:
             laser.move(vel)
@@ -109,6 +121,7 @@ class Player(Ship):
                     if laser.collision(obj):
                         objs.remove(obj)
                         self.lasers.remove(laser)
+                        score += 1
     
     def draw(self, window):
         super().draw(window)
@@ -145,16 +158,20 @@ def collide(obj1, obj2):
     return obj1.mask.overlap(obj2.mask, (offset_x, offset_y)) != None
 
 def main():
+    global score
+
     running = True
     FPS = 60
     level = 0
     lives = 5
+    score = 0
     main_font = pygame.font.SysFont("comicsans", 40)
     lost_font = pygame.font.SysFont("comicsans", 60)
 
     enemies = []
     wave_length = 5
     enemy_vel = 1
+    game_level = DIFFICULTY["medium"]
 
     player_vel = 5
     laser_vel = 5
@@ -169,11 +186,13 @@ def main():
     def redraw_window():
         WIN.blit(BG, (0, 0))
         # Draw text
-        lives_label = main_font.render(f"Lives: {lives}", 1, (255, 255, 255))
-        level_label = main_font.render(f"Level {level}", 1, (255, 255, 255))
+        lives_label = main_font.render(f"Lives: {lives}", 1, (255,255,0))
+        level_label = main_font.render(f"Level {level}", 1, (0, 0, 150))
+        score_label = main_font.render(f"Score: {score}", 1, (0, 255, 255))
 
         WIN.blit(lives_label, (10, 10))
         WIN.blit(level_label, (WIDTH - level_label.get_width() - 10, 10))
+        WIN.blit(score_label, (WIDTH/2, 10))
 
         for enemy in enemies:
             enemy.draw(WIN)
@@ -181,7 +200,7 @@ def main():
         player.draw(WIN)
 
         if lost:
-            lost_label = lost_font.render("GAME OVER", 1, (225, 225, 225))
+            lost_label = lost_font.render("GAME OVER", 1, (225, 0, 0))
             WIN.blit(lost_label, (WIDTH/2 - lost_label.get_width()/2, 350))
 
         pygame.display.update()
@@ -229,11 +248,11 @@ def main():
             enemy.move(enemy_vel)
             enemy.move_lasers(laser_vel, player)
 
-            if random.randrange(0, 2*60) == 1:
+            if random.randrange(0, game_level*60) == 1:
                 enemy.shoot()
             
             if collide(enemy, player):
-                player.health -= 10
+                player.health -= 1
                 enemies.remove(enemy)
             elif enemy.y + enemy.get_height() > HEIGHT:
                 lives -= 1
