@@ -12,9 +12,10 @@ score = 0
 DIFFICULTY = {
     "easy": 4,
     "medium": 2,
-    "hard": 1,
-    "nightmare": 0.5
+    "hard": 0.5,
 }
+
+game_level = DIFFICULTY["easy"]
 
 # Enemy Ship
 RED_SPACE_SHIP = pygame.image.load(os.path.join("assets", "pixel_ship_red_small.png"))
@@ -81,7 +82,10 @@ class Ship:
                 self.lasers.remove(laser)
             elif laser.collision(obj):
                 obj.health -= 10
-                self.lasers.remove(laser)
+                try:
+                    self.lasers.remove(laser)
+                except:
+                    continue
     
     def cooldown(self):
         if self.cool_down_counter >= self.COOLDOWN:
@@ -102,7 +106,7 @@ class Ship:
         return self.ship_img.get_height()
 
 class Player(Ship):
-    def __init__(self, x, y, health=1000):
+    def __init__(self, x, y, health=100):
         super().__init__(x, y, health)
         self.ship_img = YELLOW_SPACE_SHIP
         self.laser_img = YELLOW_LASER
@@ -159,6 +163,7 @@ def collide(obj1, obj2):
 
 def main():
     global score
+    global game_level
 
     running = True
     FPS = 60
@@ -169,9 +174,8 @@ def main():
     lost_font = pygame.font.SysFont("comicsans", 60)
 
     enemies = []
-    wave_length = 5
+    wave_length = 1
     enemy_vel = 1
-    game_level = DIFFICULTY["medium"]
 
     player_vel = 5
     laser_vel = 5
@@ -221,8 +225,8 @@ def main():
 
         if len(enemies) == 0:
             level += 1
-            wave_length += 5
-            for i in range(wave_length):
+            wave_length += wave_length
+            for _ in range(wave_length):
                 enemy = Enemy(random.randrange(50, WIDTH-100), random.randrange(-1500, -100), random.choice(["red", "blue", "green"]))
                 enemies.append(enemy)
 
@@ -252,7 +256,7 @@ def main():
                 enemy.shoot()
             
             if collide(enemy, player):
-                player.health -= 1
+                player.health -= 0.2
                 enemies.remove(enemy)
             elif enemy.y + enemy.get_height() > HEIGHT:
                 lives -= 1
@@ -261,18 +265,34 @@ def main():
         player.move_lasers(-laser_vel, enemies)
 
 def main_menu():
+    global game_level
     title_font = pygame.font.SysFont("comicsans", 70)
+    font = pygame.font.SysFont("comicsans", 50)
     run = True
     while run:
         WIN.blit(BG, (0,0))
-        title_label = title_font.render("Press the mouse to start", 1, (255,255,255))
+        title_label = title_font.render("Space Invaders 2", 1, (0, 255 ,0))
+        the_label = font.render("Press these keys for difficulty:", 1, (225, 255, 225))
+        the_label2 = font.render("1 | Easy : 2 | Medium : 3 | Hard", 1, (225, 255, 225))
         WIN.blit(title_label, (WIDTH/2 - title_label.get_width()/2, 350))
+        WIN.blit(the_label, (WIDTH/2 - the_label.get_width()/2, 400))
+        WIN.blit(the_label2, (WIDTH/2 - the_label2.get_width()/2, 450))
         pygame.display.update()
+        keys = pygame.key.get_pressed()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
+            if keys[pygame.K_1]:
+                game_level = DIFFICULTY["easy"]
                 main()
+            if keys[pygame.K_2]:
+                game_level = DIFFICULTY["medium"]
+                main()
+            if keys[pygame.K_3]:
+                game_level = DIFFICULTY["hard"]
+                main()
+            if keys[pygame.K_q]:
+                run = False
     pygame.quit()
 
 main_menu ()
